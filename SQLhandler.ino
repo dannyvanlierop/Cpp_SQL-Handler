@@ -240,23 +240,23 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
     bool bUpdate         = false;                                                                    //Update options
 
     //Get action and iteration type
-         if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetDatabase(sDB);                                    } //Get database(sDB) and returns databaseName.
-    else if( sStatement == "GET_TABLE"                          ){ bTable_Get     = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetTable(sDB,sTable);                                } //Get table(sTable) , in database(sDB) and returns tableName.
-    else if( sStatement == "GET_COLUMN"                         ){ bColumn_Get    = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetColumn(sDB,sTable,sColumn);                       } //Get column(sColumn) and returns columnName.
-    else if( sStatement == "CREATE_DATABASE"                    ){ bDb_Create     = true; bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryCreateDatabase(sDB);                                 } //Create a new database(sDB) and returns databaseName.
-    else if( sStatement == "CREATE_TABLE"                       ){ bTable_Create  = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryCreateTable(sDB,sTable);                             } //Create a new table(sTable), in database(sDB) and returns tableName.    
-    else if( sStatement == "CREATE_COLUMN"                      ){ bColumn_Create = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryCreateColumn(sDB,sTable,sColumn);                    } //Create a new column(sColumn), in database(sDB), on table(sTable) and returns columnName.
-    else if( sStatement == "DELETE_DATABASE"                    ){ bDb_Delete     = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteDatabase(sDB);                                 } //Delete database(sDB) and returns databaseName.
-    else if( sStatement == "DELETE_TABLE"                       ){ bTable_Delete  = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteTable(sDB,sTable);                             } //Delete table(sTable), in database(sDB) and returns tableName.
-    else if( sStatement == "DELETE_COLUMN"                      ){ bColumn_Delete = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteColumn(sDB,sTable,sColumn);                    } //Delete column(sColumn), in database(sDB), on table(sTable) and returns columnName.
+         if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true;                    ; bIterateRow =  true; sQuery = MysqlQueryGetDatabase(sDB);                                    } //Get database(sDB) and returns databaseName.
+    else if( sStatement == "GET_TABLE"                          ){ bTable_Get     = true;                    ; bIterateRow =  true; sQuery = MysqlQueryGetTable(sDB,sTable);                                } //Get table(sTable) , in database(sDB) and returns tableName.
+    else if( sStatement == "GET_COLUMN"                         ){ bColumn_Get    = true;                    ; bIterateRow =  true; sQuery = MysqlQueryGetColumn(sDB,sTable,sColumn);                       } //Get column(sColumn) and returns columnName.
+    else if( sStatement == "CREATE_DATABASE"                    ){ bDb_Create     = true;                    ; bIterateRow =  true; sQuery = MysqlQueryCreateDatabase(sDB);                                 } //Create a new database(sDB) and returns databaseName.
+    else if( sStatement == "CREATE_TABLE"                       ){ bTable_Create  = true;                    ; bIterateRow =  true; sQuery = MysqlQueryCreateTable(sDB,sTable);                             } //Create a new table(sTable), in database(sDB) and returns tableName.    
+    else if( sStatement == "CREATE_COLUMN"                      ){ bColumn_Create = true;                    ; bIterateRow =  true; sQuery = MysqlQueryCreateColumn(sDB,sTable,sColumn);                    } //Create a new column(sColumn), in database(sDB), on table(sTable) and returns columnName.
+    else if( sStatement == "DELETE_DATABASE"                    ){ bDb_Delete     = true;                    ; bIterateRow =  true; sQuery = MysqlQueryDeleteDatabase(sDB);                                 } //Delete database(sDB) and returns databaseName.
+    else if( sStatement == "DELETE_TABLE"                       ){ bTable_Delete  = true;                    ; bIterateRow =  true; sQuery = MysqlQueryDeleteTable(sDB,sTable);                             } //Delete table(sTable), in database(sDB) and returns tableName.
+    else if( sStatement == "DELETE_COLUMN"                      ){ bColumn_Delete = true;                    ; bIterateRow =  true; sQuery = MysqlQueryDeleteColumn(sDB,sTable,sColumn);                    } //Delete column(sColumn), in database(sDB), on table(sTable) and returns columnName.
 
     else if(sStatement == "GET_COLUMN_VALUE_FIRST_SHOW_ONE"     ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueFirstShowOne(sDB, sTable, sColumn);    } //Gets the first value from column(sColumn) on table(sTable) in database(sDB), and returns one value.
     else if(sStatement == "GET_COLUMN_VALUE_LAST_SHOW_ONE"      ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueLastShowOne(sDB, sTable, sColumn);     } //Gets the  last value from column(sColumn) on table(sTable) in database(sDB), and returns one value.
     else if(sStatement == "GET_COLUMN_VALUE_FIRST_SHOW_ROW"     ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueFirstShowRow(sDB, sTable, sColumn);    } //Gets the first value from column(sColumn) on table(sTable) in database(sDB), and returns the whole row.
     else if(sStatement == "GET_COLUMN_VALUE_LAST_SHOW_ROW"      ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueLastShowRow(sDB, sTable, sColumn);     } //Gets the  last value from column(sColumn) on table(sTable) in database(sDB), and returns the whole row.
     
-    else if(sStatement == "INSERT_VALUE"                        ){ bInsert = true; ; bCheck_sInValue = false;bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryInsertValue(sDB, sTable, sColumn, sInOutValue);      } //Insert value(sInOutValue) to column(sColumn) on table(sTable) in database(sDB), and returns.
-    else if(sStatement == "UPDATE_VALUE"                        ){ bUpdate = true; ; bCheck_sInValue = false;bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryUpdateValue(sDB, sTable, sColumn, sInOutValue);      } //Update value(sInOutValue) on column(sColumn) on table(sTable) in database(sDB), and returns.      
+    else if(sStatement == "INSERT_VALUE"                        ){ bInsert        = true;                                         ; sQuery = MysqlQueryInsertValue(sDB, sTable, sColumn, sInOutValue);      } //Insert value(sInOutValue) to column(sColumn) on table(sTable) in database(sDB), and returns.
+    else if(sStatement == "UPDATE_VALUE"                        ){ bUpdate        = true;                                         ; sQuery = MysqlQueryUpdateValue(sDB, sTable, sColumn, sInOutValue);      } //Update value(sInOutValue) on column(sColumn) on table(sTable) in database(sDB), and returns.      
 
     bGet    = ( bDb_Get     || bTable_Get     || bColumn_Get    );
     bCreate = ( bDb_Create  || bTable_Create  || bColumn_Create );
@@ -308,12 +308,12 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
                 if (row != NULL) {                                                                                                                  //iterate through rows while we got results.
                     for (int iRow = 0; iRow < cols->num_fields; iRow++) {        
                         String sInputString  = String(row->values[iRow]);
-                             if ( bDb )         { if( sInputString == sDB ){sInOutValue = sDB; break;}}
-                        else if ( bTable )      { if( sInputString == sTable ){sInOutValue = sTable; break;  }}
-                        else if ( bColumn )     { if( sInputString == sColumn ){sInOutValue = sColumn; break;}}
-                        else if ( bCheck_sInValue ) { if( sInputString == sInOutValue ){sInOutValue = sInputString; break;}}
+                             if ( bDb ) {               if( sInputString == sDB ){          sInOutValue = sDB;          break; } }
+                        else if ( bTable ) {            if( sInputString == sTable ){       sInOutValue = sTable;       break; } }
+                        else if ( bColumn ) {           if( sInputString == sColumn ){      sInOutValue = sColumn;      break; } }
+                        else if ( bCheck_sInValue ) {   if( sInputString == sInOutValue ){                              break; } }
                         else {
-                            Serial.println(String(iRow) + " = " + sInputString);                                                                           //Print row number and content
+                            Serial.println(String(iRow) + " = " + sInputString);    //Print row number and content
                         };
                     };
                 };
