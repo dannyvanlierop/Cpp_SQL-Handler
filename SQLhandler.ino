@@ -223,52 +223,52 @@ String StepReturn(int iIncrease = 0){
 
 String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sColumn = "", String sInOutValue = "")
 {  
-           String sQuery = "";                                                                                                              //String variable for our query.
-    String * pInOutValue = &sInOutValue;                                                                                                    //A pointer for passing and return values.
-        bool bIterateRow = true;
-        bool bIterateCol = true;
+      String sQuery = "";           //String variable for our query.
+        bool bIterateRow = true;    //defines what query results to skip or fetch.
+        bool bIterateCol = true;    //defines what query results to skip or fetch.
 
-    bool bCheck_sDB = false;
-    bool bCheck_sTable = false;
-    bool bCheck_sColumn = false;
-    bool bCheck_sInValue = false;
+    String * pInOutValue = &sInOutValue;    //A pointer for passing and input/return values.
 
-    bool bDb_Get        = false;     
-    bool bDb_Create     = false;     
-    bool bDb_Delete     = false;     
+    //General options     //DB options        //Table options       //Column options
+                             bool bDb        = false, bTable        = false, bColumn        = false; //Type options
+    bool bGet            = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false; //Get options
+    bool bCreate         = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false; //Create options
+    bool bDelete         = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false; //Delete option
+//  bool bExists         = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false; //Exist options
+    bool bCheck_sInValue = false, bCheck_sDB = false, bCheck_sTable = false, bCheck_sColumn = false; //Check options
+    bool bInsert         = false;                                                                    //Insert options
+    bool bUpdate         = false;                                                                    //Update options
 
-    bool bTable_Get     = false; 
-    bool bTable_Create  = false; 
-    bool bTable_Delete  = false; 
+    //Get action and iteration type
+         if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetDatabase(sDB);                                    } //Get database(sDB) and returns databaseName.
+    else if( sStatement == "GET_TABLE"                          ){ bTable_Get     = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetTable(sDB,sTable);                                } //Get table(sTable) , in database(sDB) and returns tableName.
+    else if( sStatement == "GET_COLUMN"                         ){ bColumn_Get    = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetColumn(sDB,sTable,sColumn);                       } //Get column(sColumn) and returns columnName.
+    else if( sStatement == "CREATE_DATABASE"                    ){ bDb_Create     = true; bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryCreateDatabase(sDB);                                 } //Create a new database(sDB) and returns databaseName.
+    else if( sStatement == "CREATE_TABLE"                       ){ bTable_Create  = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryCreateTable(sDB,sTable);                             } //Create a new table(sTable), in database(sDB) and returns tableName.    
+    else if( sStatement == "CREATE_COLUMN"                      ){ bColumn_Create = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryCreateColumn(sDB,sTable,sColumn);                    } //Create a new column(sColumn), in database(sDB), on table(sTable) and returns columnName.
+    else if( sStatement == "DELETE_DATABASE"                    ){ bDb_Delete     = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteDatabase(sDB);                                 } //Delete database(sDB) and returns databaseName.
+    else if( sStatement == "DELETE_TABLE"                       ){ bTable_Delete  = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteTable(sDB,sTable);                             } //Delete table(sTable), in database(sDB) and returns tableName.
+    else if( sStatement == "DELETE_COLUMN"                      ){ bColumn_Delete = true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteColumn(sDB,sTable,sColumn);                    } //Delete column(sColumn), in database(sDB), on table(sTable) and returns columnName.
 
-    bool bColumn_Get    = false;
-    bool bColumn_Create = false;
-    bool bColumn_Delete = false;
-
-         if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true; bCheck_sDB     =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetDatabase(sDB);                                    } //Get database(sDB) and returns databaseName.
-    else if( sStatement == "GET_TABLE"                          ){ bTable_Get     = true; bCheck_sTable  =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetTable(sDB,sTable);                                } //Get table(sTable) , in database(sDB) and returns tableName.
-    else if( sStatement == "GET_COLUMN"                         ){ bColumn_Get    = true; bCheck_sColumn =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryGetColumn(sDB,sTable,sColumn);                       } //Get column(sColumn) and returns columnName.
-    else if( sStatement == "CREATE_DATABASE"                    ){ bDb_Create     = true; bCheck_sDB     =  true; bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryCreateDatabase(sDB);                                 } //Create a new database(sDB) and returns databaseName.
-    else if( sStatement == "CREATE_TABLE"                       ){ bTable_Create  = true; bCheck_sTable  =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryCreateTable(sDB,sTable);                             } //Create a new table(sTable), in database(sDB) and returns tableName.    
-    else if( sStatement == "CREATE_COLUMN"                      ){ bColumn_Create = true; bCheck_sColumn =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryCreateColumn(sDB,sTable,sColumn);                    } //Create a new column(sColumn), in database(sDB), on table(sTable) and returns columnName.
-    else if( sStatement == "DELETE_DATABASE"                    ){ bDb_Delete     = true; bCheck_sDB     =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteDatabase(sDB);                                 } //Delete database(sDB) and returns databaseName.
-    else if( sStatement == "DELETE_TABLE"                       ){ bTable_Delete  = true; bCheck_sTable  =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteTable(sDB,sTable);                             } //Delete table(sTable), in database(sDB) and returns tableName.
-    else if( sStatement == "DELETE_COLUMN"                      ){ bColumn_Delete = true; bCheck_sColumn =  true; bIterateCol = false; bIterateRow =  true; sQuery = MysqlQueryDeleteColumn(sDB,sTable,sColumn);                    } //Delete column(sColumn), in database(sDB), on table(sTable) and returns columnName.
-
-    else if(sStatement == "GET_COLUMN_VALUE_FIRST_SHOW_ONE"     ){ bColumn_Get    = true;                       ; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueFirstShowOne(sDB, sTable, sColumn);    } //Gets the first value from column(sColumn) on table(sTable) in database(sDB), and returns one value.
-    else if(sStatement == "GET_COLUMN_VALUE_LAST_SHOW_ONE"      ){ bColumn_Get    = true;                       ; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueLastShowOne(sDB, sTable, sColumn);     } //Gets the  last value from column(sColumn) on table(sTable) in database(sDB), and returns one value.
-    else if(sStatement == "GET_COLUMN_VALUE_FIRST_SHOW_ROW"     ){ bColumn_Get    = true;                       ; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueFirstShowRow(sDB, sTable, sColumn);    } //Gets the first value from column(sColumn) on table(sTable) in database(sDB), and returns the whole row.
-    else if(sStatement == "GET_COLUMN_VALUE_LAST_SHOW_ROW"      ){ bColumn_Get    = true;                       ; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueLastShowRow(sDB, sTable, sColumn);     } //Gets the  last value from column(sColumn) on table(sTable) in database(sDB), and returns the whole row.
+    else if(sStatement == "GET_COLUMN_VALUE_FIRST_SHOW_ONE"     ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueFirstShowOne(sDB, sTable, sColumn);    } //Gets the first value from column(sColumn) on table(sTable) in database(sDB), and returns one value.
+    else if(sStatement == "GET_COLUMN_VALUE_LAST_SHOW_ONE"      ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueLastShowOne(sDB, sTable, sColumn);     } //Gets the  last value from column(sColumn) on table(sTable) in database(sDB), and returns one value.
+    else if(sStatement == "GET_COLUMN_VALUE_FIRST_SHOW_ROW"     ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueFirstShowRow(sDB, sTable, sColumn);    } //Gets the first value from column(sColumn) on table(sTable) in database(sDB), and returns the whole row.
+    else if(sStatement == "GET_COLUMN_VALUE_LAST_SHOW_ROW"      ){ bColumn_Get    = true; bIterateCol =  true; bIterateRow =  true; sQuery = MysqlQueryGetColumnValueLastShowRow(sDB, sTable, sColumn);     } //Gets the  last value from column(sColumn) on table(sTable) in database(sDB), and returns the whole row.
     
-    else if(sStatement == "INSERT_VALUE"                        ){                      ; bCheck_sInValue = false;bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryInsertValue(sDB, sTable, sColumn, sInOutValue);      } //Insert value(sInOutValue) to column(sColumn) on table(sTable) in database(sDB), and returns.
-    else if(sStatement == "UPDATE_VALUE"                        ){                      ; bCheck_sInValue = false;bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryUpdateValue(sDB, sTable, sColumn, sInOutValue);      } //Update value(sInOutValue) on column(sColumn) on table(sTable) in database(sDB), and returns.      
+    else if(sStatement == "INSERT_VALUE"                        ){ bInsert = true; ; bCheck_sInValue = false;bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryInsertValue(sDB, sTable, sColumn, sInOutValue);      } //Insert value(sInOutValue) to column(sColumn) on table(sTable) in database(sDB), and returns.
+    else if(sStatement == "UPDATE_VALUE"                        ){ bUpdate = true; ; bCheck_sInValue = false;bIterateCol = false; bIterateRow = false; sQuery = MysqlQueryUpdateValue(sDB, sTable, sColumn, sInOutValue);      } //Update value(sInOutValue) on column(sColumn) on table(sTable) in database(sDB), and returns.      
 
-    bool bGet    = ( bDb_Get     || bTable_Get     || bColumn_Get    );
-    bool bCreate = ( bDb_Create  || bTable_Create  || bColumn_Create );
-    bool bDelete = ( bDb_Delete  || bTable_Delete  || bColumn_Delete );
-    bool bDb     = ( bDb_Get     || bDb_Create     || bDb_Delete     );
-    bool bTable  = ( bTable_Get  || bTable_Create  || bTable_Delete  );
-    bool bColumn = ( bColumn_Get || bColumn_Create || bColumn_Delete );
+    bGet    = ( bDb_Get     || bTable_Get     || bColumn_Get    );
+    bCreate = ( bDb_Create  || bTable_Create  || bColumn_Create );
+    bDelete = ( bDb_Delete  || bTable_Delete  || bColumn_Delete );
+    bDb     = ( bDb_Get     || bDb_Create     || bDb_Delete     );
+    bTable  = ( bTable_Get  || bTable_Create  || bTable_Delete  );
+    bColumn = ( bColumn_Get || bColumn_Create || bColumn_Delete );
+
+    //bCheck_sInValue = ( xxx || xxx || xxx ), 
+    bCheck_sDB      = ( bDb_Get || bDb_Create || bDb_Delete ), 
+    bCheck_sTable   = ( bTable_Get || bTable_Create || bTable_Delete ), 
+    bCheck_sColumn  = ( bColumn_Get || bColumn_Create || bColumn_Delete );
 
     while( !WifiStatus() ) WifiConnect(); //Wait for the connection.
     while( !MysqlClientStatus() ) MysqlClientConnect(); //Wait for the connection.
@@ -371,13 +371,14 @@ void MysqlQueryPreChecker(String sStatement, String sDB, String sTable = "", Str
     String * pInOutValue = &sInOutValue;   
     
     //General options     //DB options        //Table options       //Column options
-                     bool bDb        = false, bTable        = false, bColumn        = false; //Type options
-    bool bExists = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false; //Exist options
-    bool bGet    = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false; //Get options
-    bool bCreate = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false; //Create options
-    bool bDelete = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false; //Delete option
-    bool bInsert = false;                                                                    //Insert options
-    bool bUpdate = false;                                                                    //Update options
+                             bool bDb        = false, bTable        = false, bColumn        = false; //Type options
+    bool bGet            = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false; //Get options
+    bool bCreate         = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false; //Create options
+    bool bDelete         = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false; //Delete option
+    bool bExists         = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false; //Exist options
+//  bool bCheck_sInValue = false, bCheck_sDB = false, bCheck_sTable = false, bCheck_sColumn = false; //Check options
+    bool bInsert         = false;                                                                    //Insert options
+    bool bUpdate         = false;                                                                    //Update options
 
     Serial.print("\nRequest: " + setStringLength(sStatement, " ", 31));
 
