@@ -223,21 +223,21 @@ String StepReturn(int iIncrease = 0){
 
 String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sColumn = "", String sInOutValue = "")
 {  
-      String sQuery = "";           //String variable for our query.
-        bool bIterateRow = true;    //defines what query results to skip or fetch.
-        bool bIterateCol = true;    //defines what query results to skip or fetch.
-
-    String * pInOutValue = &sInOutValue;    //A pointer for passing and input/return values.
-
-    //General options     //DB options        //Table options       //Column options
-                             bool bDb        = false, bTable        = false, bColumn        = false; //Type options
-    bool bGet            = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false; //Get options
-    bool bCreate         = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false; //Create options
-    bool bDelete         = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false; //Delete option
-//  bool bExists         = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false; //Exist options
-    bool bCheck_sInValue = false, bCheck_sDB = false, bCheck_sTable = false, bCheck_sColumn = false; //Check options
-    bool bInsert         = false;                                                                    //Insert options
-    bool bUpdate         = false;                                                                    //Update options
+    String * pInOutValue = &sInOutValue;   
+    
+    //General options             //DB options        //Table options        //Column options        //Item options
+                             bool bDb        = false, bTable        = false, bColumn        = false;                        //Type options
+    bool bGet            = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false;                        //Get options
+    bool bCreate         = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false;                        //Create options
+    bool bDelete         = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false;                        //Delete option
+    bool bExists         = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false, bItem_Exists = false;  //Exist options   //not used in MysqlQuery()
+    bool bCheck_sInValue = false, bCheck_sDB = false, bCheck_sTable = false, bCheck_sColumn = false;                        //Check options   //not used in MysqlQueryPreChecker()
+    bool bInsert         = false;                                                                                           //Insert options
+    bool bUpdate         = false;                                                                                           //Update options
+      
+    bool bIterateRow = true;    //defines what query results to skip or fetch.
+    bool bIterateCol = true;    //defines what query results to skip or fetch.
+  String sQuery = "";           //String variable for our query.
 
     //Get action and iteration type
          if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true;                    ; bIterateRow =  true; sQuery = MysqlQueryGetDatabase(sDB);                                    } //Get database(sDB) and returns databaseName.
@@ -294,8 +294,8 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
         if(bIterateCol)
         {
             //Serial.print(" -> col ");
-            for (int iCol = 0; iCol < cols->num_fields; iCol++) {                                                                                   //iterate through columns.
-                Serial.print(String(iCol) + " = ");                
+            for (int iCol = 0; iCol < cols->num_fields; iCol++) {                                                                                   //iterate through columns.               
+                Serial.print("\t" + StepReturn() + String(iCol) + " = ");                
                 Serial.println(cols->fields[iCol]->name);
             };
         };
@@ -370,15 +370,15 @@ void MysqlQueryPreChecker(String sStatement, String sDB, String sTable = "", Str
     
     String * pInOutValue = &sInOutValue;   
     
-    //General options     //DB options        //Table options       //Column options
-                             bool bDb        = false, bTable        = false, bColumn        = false; //Type options
-    bool bGet            = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false; //Get options
-    bool bCreate         = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false; //Create options
-    bool bDelete         = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false; //Delete option
-    bool bExists         = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false; //Exist options
-//  bool bCheck_sInValue = false, bCheck_sDB = false, bCheck_sTable = false, bCheck_sColumn = false; //Check options
-    bool bInsert         = false;                                                                    //Insert options
-    bool bUpdate         = false;                                                                    //Update options
+    //General options             //DB options        //Table options        //Column options        //Item options
+                             bool bDb        = false, bTable        = false, bColumn        = false;                        //Type options
+    bool bGet            = false, bDb_Get    = false, bTable_Get    = false, bColumn_Get    = false;                        //Get options
+    bool bCreate         = false, bDb_Create = false, bTable_Create = false, bColumn_Create = false;                        //Create options
+    bool bDelete         = false, bDb_Delete = false, bTable_Delete = false, bColumn_Delete = false;                        //Delete option
+    bool bExists         = false, bDb_Exists = false, bTable_Exists = false, bColumn_Exists = false, bItem_Exists = false;  //Exist options   //not used in MysqlQuery()
+    bool bCheck_sInValue = false, bCheck_sDB = false, bCheck_sTable = false, bCheck_sColumn = false;                        //Check options   //not used in MysqlQueryPreChecker()
+    bool bInsert         = false;                                                                                           //Insert options
+    bool bUpdate         = false;                                                                                           //Update options
 
     Serial.print("\nRequest: " + setStringLength(sStatement, " ", 31));
 
