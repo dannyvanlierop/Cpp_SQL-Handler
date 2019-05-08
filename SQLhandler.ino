@@ -9,29 +9,27 @@
 #include <MySQL_Connection.h>
 #include <MySQL_Cursor.h>
 
-IPAddress mySQLServerIP = IPAddress(0, 0, 0, 0);
-int mySQLServerPort = 0;
-char* mySQLUserName = ""; 
-char* mySQLUserPass = "";
-char* mySQLWiFiSSID = ""; 
-char* mySQLWiFiPass = "";
+#include "./token.h"
 
 WiFiClient client;
 MySQL_Connection conn((Client *)&client);
-int loopCounter = 1;
 
-bool bDebug = true;
-bool WifiStatus(){ return (WiFi.status() == WL_CONNECTED); };
-void WifiConnect()
-{
-    Serial.print(WiFi.begin(mySQLWiFiSSID, mySQLWiFiPass));
-    while (!WifiStatus())
+int loopCounter = 1;
+bool bDebug = false;
+
+//For pretty console print
+int iQueryStep = 1;
+const int iQueryStepIncrease = 2;
+String StepReturn(int iIncrease = 0){
+    
+    iQueryStep = iQueryStep + iIncrease;
+    String sRetval = "";
+
+    for(int iPos = 0; iPos <= iQueryStep; iPos++)
     {
-        delay(100);
-        Serial.print(".");
+        sRetval += "\t";
     }
-    Serial.println();
-    Serial.println(WiFi.localIP());
+    return sRetval;
 }
 String setStringLength(String stringInput, String charInput, int stringLengthNew, int intPlacement = 0){
 
@@ -80,6 +78,21 @@ String setStringLength(String stringInput, String charInput, int stringLengthNew
     return stringExtendPrefix + stringInput + stringExtendSuffix;
 }
 
+/*WIFI*//////////////////////////////////////////////////////////////////
+bool WifiStatus(){ return (WiFi.status() == WL_CONNECTED); };
+void WifiConnect()
+{
+    Serial.print(WiFi.begin(mySQLWiFiSSID, mySQLWiFiPass));
+    while (!WifiStatus())
+    {
+        delay(100);
+        Serial.print(".");
+    }
+    Serial.println();
+    Serial.println(WiFi.localIP());
+}
+
+/*MYSQL*//////////////////////////////////////////////////////////////////
 bool MysqlClientStatus()
 {
     return conn.connected();
@@ -101,10 +114,6 @@ String MysqlQueryGetDatabase(String sDB)
 {
     return "SHOW DATABASES LIKE '" + sDB + "';";
 };
-//String MysqlQueryGetDatabase(String sDB)
-//{
-//    return "SHOW DATABASES LIKE '" + sDB + "';";
-//};
 String MysqlQueryGetTable(String sDB, String sTable){
     return "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA ='" + sDB + "' AND TABLE_NAME ='" + sTable + "' LIMIT 1;";
 };
@@ -127,7 +136,7 @@ String MysqlQueryGetColumnValueFirstShowOne(String sDB, String sTable, String sC
 String MysqlQueryGetColumnValueLastShowOne(String sDB, String sTable, String sColumn)
 {
     return "SELECT " + sColumn + " FROM " + sDB + "." + sTable + " WHERE `" + sColumn + "` IS NOT NULL ORDER BY Id DESC LIMIT 1";
-   };
+};
 
 /*GET_COLUMN_VALUE_FIRST_SHOW_ROW*////////////////////////////////////////////////////////////////////
 String MysqlQueryGetColumnValueFirstShowRow(String sDB, String sTable, String sColumn)
@@ -146,8 +155,8 @@ String MysqlQueryCreateDatabase(String sDB)
 {
     return "CREATE DATABASE IF NOT EXISTS " + sDB + ";";
 };
-String MysqlQueryCreateTable(String sDB, String sTable
-){
+String MysqlQueryCreateTable(String sDB, String sTable)
+{
     return "USE " + sDB + "; CREATE TABLE IF NOT EXISTS `" + sTable + "` (  `Id` int(11) NOT NULL, `Timestamp` timestamp NOT NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8; TRUNCATE TABLE `" + sTable + "`; ALTER TABLE `" + sTable + "` ADD PRIMARY KEY (`Id`) USING BTREE;" + "ALTER TABLE `" + sTable + "` MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT;";
     };
 String MysqlQueryCreateColumn(String sDB, String sTable, String sColumn)
@@ -180,18 +189,19 @@ String MysqlQueryInsertValue(String sDB, String sTable, String sColumn, String s
     return "INSERT INTO " + sDB + "." + sTable + " (" + sColumn + ") VALUES ('" + sInOutValue + "');";
 };// Query(MySQL) : INSERT INTO DatabaseName.TableName (ColumnName1) VALUES ('testString');
 
+//TODO:
 /*COUNT*////////////////////////////////////////////////////////////////////
-
-
 //ONDELETE -> DROP Table when its the last column - count columns in table
 //ONDELETE -> DROP database when its the last Table - count tables in database
+
+//Convert string to char array pointer
 char* strTooChar(String sQuery)
 {
     int sLength = sQuery.length() + 1;                                                                                                      //The string input length.
     char charQuery[sLength];                                                                                                                //A new char array with the length of inputString.
     sQuery.toCharArray(charQuery, sLength); 
 }
-
+//The MYSQL cursor
 MySQL_Cursor * MysqlQueryCursor(String sQuery)
 {
     //Serial.println("Mysql Query : ( " + sQuery + " )");                                                                                   //The string input.
@@ -203,24 +213,7 @@ MySQL_Cursor * MysqlQueryCursor(String sQuery)
     return cur_mem;                                                                                                                         //Return the query results
 }
 
-bool bDebugInput  = bDebug;
-bool bDebugOutput = bDebug;
-
-int iQueryStep = 1;
-const int iQueryStepIncrease = 2;
-
-String StepReturn(int iIncrease = 0){
-    
-    iQueryStep = iQueryStep + iIncrease;
-    String sRetval = "";
-
-    for(int iPos = 0; iPos <= iQueryStep; iPos++)
-    {
-        sRetval += "\t";
-    }
-    return sRetval;
-}
-
+//The MySQL query execution
 String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String sColumn = "", String sInOutValue = "")
 {  
     String * pInOutValue = &sInOutValue;   
@@ -277,7 +270,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
     while( !WifiStatus() ) WifiConnect();               //Wait for the connection.
     while( !MysqlClientStatus() ) MysqlClientConnect(); //Wait for the connection.
 
-    if(bDebugInput){
+    if(bDebug){
         Serial.println();
         Serial.println(StepReturn() + "│");
         Serial.print(StepReturn() + "└─► " + sStatement);
@@ -295,12 +288,12 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
         column_names *cols = cur_mem->get_columns();    //Fetch the columns.
         if(bIterateCol)
         {
-            if(bDebugOutput)Serial.print(StepReturn() + "\t└┐\n");
+            if(bDebug)Serial.print(StepReturn() + "\t└┐\n");
             for (int iCol = 0; iCol < cols->num_fields; iCol++) {   //iterate through columns.               
-                if(bDebugOutput)Serial.print(StepReturn() + "\t ├─► col" + String(iCol) + " = ");                
-                if(bDebugOutput)Serial.println(cols->fields[iCol]->name);
+                if(bDebug)Serial.print(StepReturn() + "\t ├─► col" + String(iCol) + " = ");                
+                if(bDebug)Serial.println(cols->fields[iCol]->name);
             };
-            if(bDebugOutput)Serial.print(StepReturn() + "\t┌┘\n");
+            if(bDebug)Serial.print(StepReturn() + "\t┌┘\n");
         };
         row_values *row = NULL;
         if(bIterateRow)
@@ -308,10 +301,10 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
             do {    //Read the rows and print them   
                 row = cur_mem->get_next_row();
                 if (row != NULL) {  //iterate through rows while we got results.
-                    if(bDebugOutput)Serial.print(StepReturn() + "\t└┐\n");
+                    if(bDebug)Serial.print(StepReturn() + "\t└┐\n");
                     for (int iRow = 0; iRow < cols->num_fields; iRow++) {        
                         String sInputString  = String(row->values[iRow]);
-                        if(bDebugOutput)Serial.println(StepReturn() + "\t ├─► row" + String(iRow) + " = " + sInputString);  //Print row number and content
+                        if(bDebug)Serial.println(StepReturn() + "\t ├─► row" + String(iRow) + " = " + sInputString);  //Print row number and content
 
                         if ( bDb ) {                        if( sInputString == sDB ){        sInOutValue = sDB;       break; } }                          
                         else if ( bTable ) {                if( sInputString == sTable ){     sInOutValue = sTable;    break; } }
@@ -333,7 +326,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
                     };
                 };
             } while (row != NULL);  //Read till we have all the rows.
-            if(bDebugOutput)Serial.print(StepReturn() + "\t┌┘\n");
+            if(bDebug)Serial.print(StepReturn() + "\t┌┘\n");
         }
     }
     
@@ -341,49 +334,41 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
 
     MysqlClientDisconnect();//Disconnect from MySql Server.
 
-    if(bDebugOutput){
+    if(bDebug){
         Serial.print(StepReturn(1) + "└─► OUTPUT ─► ");
 
         if (bValue){
-                if(sInOutValue == ""){ Serial.print("bValue not found"); }
-                else { Serial.print("bValue " + sInOutValue + " found"); } 
+            Serial.print(sInOutValue == ""?"bValue " + sInOutValue + " found":"bValue not found");
         } 
         else if(bInsert){
-                if(sInOutValue == ""){ Serial.print("bInsert not found"); }
-                else { Serial.print(sInOutValue); } 
+            Serial.print(sInOutValue == ""?"bInsert " + sInOutValue + " found":"bInsert not found");
         } 
         else if(bUpdate){
-                if(sInOutValue == ""){ Serial.print("bUpdate not found"); }
-                else { Serial.print(sInOutValue); } 
+            Serial.print(sInOutValue == ""?"bUpdate " + sInOutValue + " found":"bUpdate not found");
         } 
-        else if(bDb){
-            if(bGet){           
-                if(sInOutValue == ""){ Serial.print("database not found"); }
-                else { Serial.print("database " + sInOutValue + " found"); } }       
-            else if(bCreate){   
-                if(sInOutValue == ""){ Serial.print("database created"); }
-                else { Serial.print("database " + sInOutValue + " create DB-ERROR  -> " + sInOutValue); } } 
-            else if(bDelete){   
-                if(sInOutValue == ""){ Serial.print("database deleted"); }
-                else { Serial.print("database " + sInOutValue + " deleted ERROR  -> " + sInOutValue); } } }
-        else if(bTable){
-            if(bGet){           
-                if(sInOutValue == ""){ Serial.print("table not found"); }    
-                else { Serial.print("table " + sInOutValue + " found"); } } 
-            else if(bCreate){   
-                if(sInOutValue == ""){ Serial.print("table created"); }      
-                else { Serial.print("table " + sInOutValue + " create ERROR  -> " + sInOutValue); } } 
-            else if(bDelete){   
-                if(sInOutValue == ""){ Serial.print("table deleted"); }      
-                else { Serial.print("table " + sInOutValue + " deleted ERROR  -> " + sInOutValue); } } } 
-        else if(bColumn){ 
-            if(bGet){           
-                if(sInOutValue == ""){ Serial.print("column not found"); }
-                else { Serial.print("column " + sInOutValue + " found"); } } 
-            else if(bCreate){   
+        else if(bDb)
+        {
+                 if(bGet){      Serial.print(sInOutValue == ""?"database " + sInOutValue + " found":"ERROR: database not found");       }
+            else if(bCreate){   Serial.print(sInOutValue == ""?"database " + sInOutValue + " created":"ERROR: database not created");   }
+            else if(bDelete){   Serial.print(sInOutValue == ""?"database " + sInOutValue + " deleted":"ERROR: database not deleted");   }
+        }
+        else if(bTable)
+        {
+            if(bGet){
+                Serial.print(sInOutValue == ""?"table " + sInOutValue + " found":"ERROR: table not found"); }
+            else if(bCreate){
+                Serial.print(sInOutValue == ""?"table " + sInOutValue + " created":"ERROR: table not created"); }
+            else if(bDelete){
+                Serial.print(sInOutValue == ""?"table " + sInOutValue + " deleted":"ERROR: table not deleted"); }
+        }
+        else if(bColumn)
+        { 
+            if(bGet){
+                Serial.print(sInOutValue == ""?"column " + sInOutValue + " found":"ERROR: column not found"); }
+            else if(bCreate){
                 if(sInOutValue == ""){ Serial.print("column created"); }
                 else { Serial.print("column " + sInOutValue + " create ERROR  -> " + sColumn); } } 
-            else if(bDelete){   
+            else if(bDelete){
                 if(sInOutValue == ""){ Serial.print("column deleted"); }
                 else { Serial.print("column " + sInOutValue + " deleted ERROR  -> " + sInOutValue); } }
         };
@@ -392,6 +377,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
     return pInOutValue; //Return the value as pointer.
 };
 
+//The MySQL query (Pre)execution
 String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sColumn = "", String sInOutValue = "")
 {    
     String * pInOutValue = &sInOutValue;   
@@ -406,7 +392,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
     bool bUpdate         = false;                                                                                           //Get multi values
     bool bValue_Multi    = false;                                                                                           //Update options 
 
-    if(bDebugInput)Serial.print("\nRequest:" + setStringLength(sStatement, " ", 31));
+    if(bDebug)Serial.print("\nRequest:" + setStringLength(sStatement, " ", 31));
 
     //Get action and item type
          if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true; }
@@ -440,7 +426,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
             bValue_Get ){  sGetResult = *MysqlQueryDo("GET_COLUMN", sDB, sTable, sColumn); bColumn_Exists = (sGetResult != NULL); }
 
     if(bValue_Get && !bColumn_Exists){//Location of value doesnt exist.
-        if(bDebugInput)Serial.print(" ─► Skip...");
+        if(bDebug)Serial.print(" ─► Skip...");
         sInOutValue = "";
         return pInOutValue; 
     }
@@ -484,9 +470,9 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
             };//Column must be ok here.          
         }     
         else {
-            if(bDebugOutput && bCreate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip Create...");
-            if(bDebugOutput && bInsert)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Insert...");
-            if(bDebugOutput && bUpdate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Update...");
+            if(bDebug && bCreate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip Create...");
+            if(bDebug && bInsert)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Insert...");
+            if(bDebug && bUpdate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Update...");
         }
        
         if(bInsert){ MysqlQueryDo("INSERT_VALUE", sDB, sTable, sColumn, sInOutValue); }//Add value to column
@@ -499,7 +485,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
             else if(bTable) { MysqlQueryDo("DELETE_TABLE", sDB, sTable); }
             else if(bColumn){ MysqlQueryDo("DELETE_COLUMN", sDB, sTable , sColumn); };
         } else {
-            if(bDebugOutput)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip delete...");//Skip deleting non existing items
+            if(bDebug)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip delete...");//Skip deleting non existing items
         }
     }  
     if(bGet){
@@ -512,9 +498,11 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
 
     return pInOutValue; //Return the value as pointer.
 }
+
+//The main loop
 void loop()
 {
-    int r = rand() % 16;
+    int r = rand() % 13;
 
     switch(r){
 
@@ -524,31 +512,27 @@ void loop()
         case 4:  MysqlQuery("GET_DATABASE", "DatabaseName6"); break;
         case 5:  MysqlQuery("GET_TABLE", "DatabaseName6", "table5"); break;
         case 6:  MysqlQuery("GET_COLUMN", "DatabaseName6", "table5", "column5"); break;
-        case 7:  MysqlQuery("DELETE_COLUMN", "DatabaseName6", "table5", "sColumn5"); break;
-        case 8:  MysqlQuery("DELETE_TABLE", "DatabaseName6", "table5"); ; break;
-        case 9:  MysqlQuery("DELETE_DATABASE", "DatabaseName6"); break;
-        case 10: MysqlQuery("INSERT_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
-        case 11: MysqlQuery("UPDATE_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
-        case 12: MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ONE", "DatabaseName6", "table5", "column5"); break;
-        case 13: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ONE", "DatabaseName6", "table5", "column5"); break;
-        case 14: MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ROW", "DatabaseName6", "table5", "column5"); break;
-        case 15: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ROW", "DatabaseName6", "table5", "column5"); break;
-
+        case 7:  MysqlQuery("INSERT_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
+        case 8:  MysqlQuery("UPDATE_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
+        case 9:  MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ONE", "DatabaseName6", "table5", "column5"); break;
+        case 10: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ONE", "DatabaseName6", "table5", "column5"); break;
+        case 11: MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ROW", "DatabaseName6", "table5", "column5"); break;
+        case 12: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ROW", "DatabaseName6", "table5", "column5"); break;
+        case 13: MysqlQuery("DELETE_COLUMN", "DatabaseName6", "table5", "sColumn5"); break;
+        case 14: MysqlQuery("DELETE_TABLE", "DatabaseName6", "table5"); ; break;
+        case 15: MysqlQuery("DELETE_DATABASE", "DatabaseName6"); break;
     }           
 
     Serial.print("\n.............................................................. loop:" + String(loopCounter++) + " ..............................................................");   
     //delay(1000); //Slow down between loops
     iQueryStep = 1;//Reset
 };
+
+//Global setup
 void setup() {
     Serial.begin(250000);   //Start serial monitor.
     while (!Serial);        //Wait for serial port to connect.
     Serial.println();       //Start the console on a new line.
     WifiConnect();          //Connect the WifiClient.
 };
-
-
-
-
-
 
