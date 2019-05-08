@@ -412,10 +412,11 @@ void MysqlQueryPreChecker(String sStatement, String sDB, String sTable = "", Str
     String sGetResult;
 
     iQueryStep = 1;//reset!!    
-    if(bDb)                     { sQueryItem = "DATABASE"; sGetResult = *MysqlQuery("GET_DATABASE", sDB);                bDb_Exists     = (sGetResult != NULL); }
-    else if(bTable)             { sQueryItem = "TABLE";    sGetResult = *MysqlQuery("GET_TABLE", sDB, sTable);           bTable_Exists  = (sGetResult != NULL); }
-    else if(bColumn)            { sQueryItem = "COLUMN";   sGetResult = *MysqlQuery("GET_COLUMN", sDB, sTable, sColumn); bColumn_Exists = (sGetResult != NULL); }
-    else if(bInsert || bUpdate) {                          sGetResult = *MysqlQuery("GET_COLUMN", sDB, sTable, sColumn); bColumn_Exists = (sGetResult != NULL); };
+    if(bDb)          {  sGetResult = *MysqlQuery("GET_DATABASE", sDB);                bDb_Exists     = (sGetResult != NULL); }
+    else if(bTable)  {  sGetResult = *MysqlQuery("GET_TABLE", sDB, sTable);           bTable_Exists  = (sGetResult != NULL); }
+    else if(bColumn ||
+            bInsert || 
+            bUpdate ){  sGetResult = *MysqlQuery("GET_COLUMN", sDB, sTable, sColumn); bColumn_Exists = (sGetResult != NULL); }
 
     bGet    = ( bDb_Get     || bTable_Get     || bColumn_Get    );
     bCreate = ( bDb_Create  || bTable_Create  || bColumn_Create );
@@ -423,32 +424,21 @@ void MysqlQueryPreChecker(String sStatement, String sDB, String sTable = "", Str
     bExists = ( bDb_Exists  || bTable_Exists  || bColumn_Exists );
 
     //Done preset, time for some action
-    
-    //OUTPPUT
-    //Serial.print("   └─► OUTPUT ◄─► "  + sGetResult);
-
     if(bGet)
     {
-        //sQueryAction = "GET";
-        //if (!bExists){
-        //    Serial.print("\n\t\t\t └──► Not found..." + sQueryItem + " ─► " + sGetResult);
-        //} else {
-        //    //Serial.print("\n\t\t\t └──► Found..." + sQueryItem + " ─► " + sGetResult);
-        //}         
+          
     }
     else if(bCreate || bInsert || bUpdate)
     {
         //sQueryAction = "CREATE";
 
-        if(!bExists)//Create request, item does not exist yet.
+        if(!bExists)//Item does not exist yet.
         {
-            //DATABASE - Check databse on, database table and column requests.
-            //Check if database exists, and dont double check database exists.
-                        
-            if(bDb){//Skip double gets , database doesnt exist, create Immediately
+            //DATABASE - Check database, table and column requests, if database exists, and dont double check database existence.
+            if(bDb){//Skip double gets/checks, database doesnt exist at this moment, create Immediately
                 MysqlQuery("CREATE_DATABASE", sDB);
             } 
-            else if( *MysqlQuery("GET_DATABASE" , sDB) == "")//Check if database exists, and dont double check database exists.
+            else if( *MysqlQuery("GET_DATABASE" , sDB) == "")//Unsure if databse exist, check existence.
             {
                 MysqlQuery("CREATE_DATABASE", sDB);//not found, create database.
             };//Database must be ok here.
@@ -456,21 +446,19 @@ void MysqlQueryPreChecker(String sStatement, String sDB, String sTable = "", Str
             //TABLE - Check table, on table and column requests.
             if (!bDb)
             {
-                //Serial.println("\n Debug: " + sGetResult );
-                if( bTable_Create && !bExists || *MysqlQuery("GET_TABLE" , sDB, sTable) == "")//Check if table exists, and dont double check database exists.
+                if( bTable_Create && !bExists || *MysqlQuery("GET_TABLE" , sDB, sTable) == "")//Check if table exists.
                 {
                     MysqlQuery("CREATE_TABLE", sDB, sTable);//not found, create table.
                 }
             };//Table must be ok here.
 
-            //COLUMN - Check column, on column requests.
+            //COLUMN - Check column.
             if (!bDb && !bTable)
             {
                 if(*MysqlQuery("GET_COLUMN" , sDB, sTable, sColumn) == "")//Check if column exists.
                 {
                     MysqlQuery("CREATE_COLUMN" + sQueryItem, sDB, sTable, sColumn);//Not found, create column.
-                    //Create init value 
-                    MysqlQuery("INSERT_VALUE", sDB, sTable, sColumn, "initVal");
+                    MysqlQuery("INSERT_VALUE", sDB, sTable, sColumn, "null");//Create init value 
                 }
             };//Column must be ok here.
             
@@ -483,42 +471,34 @@ void MysqlQueryPreChecker(String sStatement, String sDB, String sTable = "", Str
 
         }
 
-        if(bInsert){ MysqlQuery("INSERT_VALUE", sDB, sTable, sColumn, sInOutValue); }   
-        if(bUpdate){ MysqlQuery("UPDATE_VALUE", sDB, sTable, sColumn, sInOutValue); }   
+        if(bInsert){ MysqlQuery("INSERT_VALUE", sDB, sTable, sColumn, sInOutValue); }//Add value to column
+        if(bUpdate){ MysqlQuery("UPDATE_VALUE", sDB, sTable, sColumn, sInOutValue); }//Update value at id=1 on column
     } 
     else if(bDelete)
     {
-        //sQueryAction = "DELETE";
-
         if(bExists){
-            
-            //Serial.print(" -> Found " + sQueryItem + " " + sGetResult);
-            MysqlQuery("DELETE_" + sQueryItem, sDB, sTable , sColumn ,sInOutValue);
-
+            MysqlQuery("DELETE_" + sQueryItem, sDB, sTable , sColumn ,sInOutValue); //Delete database,table,column
         } else {
-            //Serial.print(" -> Not Found " + sQueryItem  + " -> Skip delete...");
-            if(bDebugOutput)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip delete...");
+            if(bDebugOutput)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip delete...");//Skip deleting non existing items
         }
     }
 }
 void loop()
 {
-
     int r = rand() % 16;
-
-
+    
     switch(r){
 
-        //case 1: MysqlQueryPreChecker("CREATE_DATABASE", "DatabaseName6"); break;
-        //case 2: MysqlQueryPreChecker("CREATE_TABLE", "DatabaseName6", "table5"); break;
-        //case 3: MysqlQueryPreChecker("CREATE_COLUMN", "DatabaseName6", "table5", "column5"); break;
-        //case 4: MysqlQueryPreChecker("GET_DATABASE", "DatabaseName6"); break;
-        //case 5: MysqlQueryPreChecker("GET_TABLE", "DatabaseName6", "table5"); break;
-        //case 6: MysqlQueryPreChecker("GET_COLUMN", "DatabaseName6", "table5", "column5"); break;
-        //case 7: MysqlQueryPreChecker("DELETE_COLUMN", "DatabaseName6", "table5", "sColumn5"); break;
-        //case 8: MysqlQueryPreChecker("DELETE_TABLE", "DatabaseName6", "table5"); ; break;
-        //case 9: MysqlQueryPreChecker("DELETE_DATABASE", "DatabaseName6"); break;
-        //case 10: MysqlQueryPreChecker("INSERT_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
+        case 1: MysqlQueryPreChecker("CREATE_DATABASE", "DatabaseName6"); break;
+        case 2: MysqlQueryPreChecker("CREATE_TABLE", "DatabaseName6", "table5"); break;
+        case 3: MysqlQueryPreChecker("CREATE_COLUMN", "DatabaseName6", "table5", "column5"); break;
+        case 4: MysqlQueryPreChecker("GET_DATABASE", "DatabaseName6"); break;
+        case 5: MysqlQueryPreChecker("GET_TABLE", "DatabaseName6", "table5"); break;
+        case 6: MysqlQueryPreChecker("GET_COLUMN", "DatabaseName6", "table5", "column5"); break;
+        case 7: MysqlQueryPreChecker("DELETE_COLUMN", "DatabaseName6", "table5", "sColumn5"); break;
+        case 8: MysqlQueryPreChecker("DELETE_TABLE", "DatabaseName6", "table5"); ; break;
+        case 9: MysqlQueryPreChecker("DELETE_DATABASE", "DatabaseName6"); break;
+        case 10: MysqlQueryPreChecker("INSERT_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
         case 11: MysqlQueryPreChecker("UPDATE_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
         //case 12: //MysqlQueryPreChecker("GET_COLUMN_VALUE_FIRST_SHOW_ONE", "DatabaseName6", "table5", "sColumn5"); break;
         //case 13: //MysqlQueryPreChecker("GET_COLUMN_VALUE_LAST_SHOW_ONE", "DatabaseName6", "table5", "sColumn5"); break;
