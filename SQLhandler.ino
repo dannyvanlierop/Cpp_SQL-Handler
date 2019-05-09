@@ -15,7 +15,7 @@ WiFiClient client;
 MySQL_Connection conn((Client *)&client);
 
 int loopCounter = 1;
-bool bDebug = false;
+bool bDebugSQL = false;
 
 //For pretty console print
 int iQueryStep = 1;
@@ -270,7 +270,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
     while( !WifiStatus() ) WifiConnect();               //Wait for the connection.
     while( !MysqlClientStatus() ) MysqlClientConnect(); //Wait for the connection.
 
-    if(bDebug){
+    if(bDebugSQL){
         Serial.println();
         Serial.println(StepReturn() + "│");
         Serial.print(StepReturn() + "└─► " + sStatement);
@@ -288,12 +288,12 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
         column_names *cols = cur_mem->get_columns();    //Fetch the columns.
         if(bIterateCol)
         {
-            if(bDebug)Serial.print(StepReturn() + "\t└┐\n");
+            if(bDebugSQL)Serial.print(StepReturn() + "\t└┐\n");
             for (int iCol = 0; iCol < cols->num_fields; iCol++) {   //iterate through columns.               
-                if(bDebug)Serial.print(StepReturn() + "\t ├─► col" + String(iCol) + " = ");                
-                if(bDebug)Serial.println(cols->fields[iCol]->name);
+                if(bDebugSQL)Serial.print(StepReturn() + "\t ├─► col" + String(iCol) + " = ");                
+                if(bDebugSQL)Serial.println(cols->fields[iCol]->name);
             };
-            if(bDebug)Serial.print(StepReturn() + "\t┌┘\n");
+            if(bDebugSQL)Serial.print(StepReturn() + "\t┌┘\n");
         };
         row_values *row = NULL;
         if(bIterateRow)
@@ -301,10 +301,10 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
             do {    //Read the rows and print them   
                 row = cur_mem->get_next_row();
                 if (row != NULL) {  //iterate through rows while we got results.
-                    if(bDebug)Serial.print(StepReturn() + "\t└┐\n");
+                    if(bDebugSQL)Serial.print(StepReturn() + "\t└┐\n");
                     for (int iRow = 0; iRow < cols->num_fields; iRow++) {        
                         String sInputString  = String(row->values[iRow]);
-                        if(bDebug)Serial.println(StepReturn() + "\t ├─► row" + String(iRow) + " = " + sInputString);  //Print row number and content
+                        if(bDebugSQL)Serial.println(StepReturn() + "\t ├─► row" + String(iRow) + " = " + sInputString);  //Print row number and content
 
                         if ( bDb ) {                        if( sInputString == sDB ){        sInOutValue = sDB;       break; } }                          
                         else if ( bTable ) {                if( sInputString == sTable ){     sInOutValue = sTable;    break; } }
@@ -326,7 +326,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
                     };
                 };
             } while (row != NULL);  //Read till we have all the rows.
-            if(bDebug)Serial.print(StepReturn() + "\t┌┘\n");
+            if(bDebugSQL)Serial.print(StepReturn() + "\t┌┘\n");
         }
     }
     
@@ -334,7 +334,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
 
     MysqlClientDisconnect();//Disconnect from MySql Server.
 
-    if(bDebug){
+    if(bDebugSQL){
         Serial.print(StepReturn(1) + "└─► OUTPUT ─► ");
 
         if (bValue){
@@ -392,7 +392,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
     bool bUpdate         = false;                                                                                           //Get multi values
     bool bValue_Multi    = false;                                                                                           //Update options 
 
-    if(bDebug)Serial.print("\nRequest:" + setStringLength(sStatement, " ", 31));
+    if(bDebugSQL)Serial.print("\nRequest:" + setStringLength(sStatement, " ", 31));
 
     //Get action and item type
          if( sStatement == "GET_DATABASE"                       ){ bDb_Get        = true; }
@@ -426,7 +426,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
             bValue_Get ){  sGetResult = *MysqlQueryDo("GET_COLUMN", sDB, sTable, sColumn); bColumn_Exists = (sGetResult != NULL); }
 
     if(bValue_Get && !bColumn_Exists){//Location of value doesnt exist.
-        if(bDebug)Serial.print(" ─► Skip...");
+        if(bDebugSQL)Serial.print(" ─► Skip...");
         sInOutValue = "";
         return pInOutValue; 
     }
@@ -470,9 +470,9 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
             };//Column must be ok here.          
         }     
         else {
-            if(bDebug && bCreate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip Create...");
-            if(bDebug && bInsert)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Insert...");
-            if(bDebug && bUpdate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Update...");
+            if(bDebugSQL && bCreate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip Create...");
+            if(bDebugSQL && bInsert)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Insert...");
+            if(bDebugSQL && bUpdate)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Do Update...");
         }
        
         if(bInsert){ MysqlQueryDo("INSERT_VALUE", sDB, sTable, sColumn, sInOutValue); }//Add value to column
@@ -485,7 +485,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
             else if(bTable) { MysqlQueryDo("DELETE_TABLE", sDB, sTable); }
             else if(bColumn){ MysqlQueryDo("DELETE_COLUMN", sDB, sTable , sColumn); };
         } else {
-            if(bDebug)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip delete...");//Skip deleting non existing items
+            if(bDebugSQL)Serial.print("\n" + StepReturn(iQueryStepIncrease) + "└───► Skip delete...");//Skip deleting non existing items
         }
     }  
     if(bGet){
