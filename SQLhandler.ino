@@ -15,7 +15,7 @@ WiFiClient client;
 MySQL_Connection conn((Client *)&client);
 
 int loopCounter = 1;
-bool bDebugSQL = false;
+bool bDebugSQL = true;
 
 //For pretty console print
 int iQueryStep = 1;
@@ -264,7 +264,7 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
     //Combines/Corrections here
     bValue_Get  = ( bValue_Get || bValue_Multi);        //Set bValue_Get when we have any type of get
     bIterateCol = ( bIterateCol || bValue_Get);         //Iterate when we need to get a value for return
-    bIterateRow = ( bIterateRow && !bCreate );          //Iterate rows by default, only skip on create
+    bIterateRow = ( bIterateRow && !bCreate );          //Iterate rows by default, only skip on create db,table, column
     bColumn_Get = ( bColumn_Get || bValue_Get );        //Check columns existence before fetching
 
     while( !WifiStatus() ) WifiConnect();               //Wait for the connection.
@@ -306,8 +306,8 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
                         String sInputString  = String(row->values[iRow]);
                         if(bDebugSQL)Serial.println(StepReturn() + "\t ├─► row" + String(iRow) + " = " + sInputString);  //Print row number and content
 
-                        if ( bDb ) {                        if( sInputString == sDB ){        sInOutValue = sDB;       break; } }                          
-                        else if ( bTable ) {                if( sInputString == sTable ){     sInOutValue = sTable;    break; } }
+                        if ( bDb ) {                        if( sInputString == sDB ){        Serial.println("\n sInOutValue: " + sDB); sInOutValue = sDB;       break; } }                          
+                        else if ( bTable ) {                if( sInputString == sTable ){     Serial.println("\n sInOutValue: " + sTable); sInOutValue = sTable;    break; } }
                         else if ( bColumn && !bValue_Get) { if( sInputString == sColumn ){    sInOutValue = sColumn;   break; } }
                         else if ( bValue_Get ) {            if( sInputString != NULL ){ //Dont add null values
                                                                 if(!bValue_Multi){//Get a single value
@@ -337,40 +337,27 @@ String * MysqlQueryDo(String sStatement, String sDB, String sTable = "", String 
     if(bDebugSQL){
         Serial.print(StepReturn(1) + "└─► OUTPUT ─► ");
 
-        if (bValue){
-            Serial.print(sInOutValue == ""?"bValue " + sInOutValue + " found":"bValue not found");
-        } 
-        else if(bInsert){
-            Serial.print(sInOutValue == ""?"bInsert " + sInOutValue + " found":"bInsert not found");
-        } 
-        else if(bUpdate){
-            Serial.print(sInOutValue == ""?"bUpdate " + sInOutValue + " found":"bUpdate not found");
-        } 
+        if (bValue){            Serial.print(sInOutValue != ""?"value " + sInOutValue + " found":"Value not found");        } 
+        else if(bInsert){       Serial.print(sInOutValue != ""?"value " + sInOutValue + " Inserted":"Insert not found");      } 
+        else if(bUpdate){       Serial.print(sInOutValue != ""?"value " + sInOutValue + " Updated":"Update not found");      } 
         else if(bDb)
         {
-                 if(bGet){      Serial.print(sInOutValue == ""?"database " + sInOutValue + " found":"ERROR: database not found");       }
-            else if(bCreate){   Serial.print(sInOutValue == ""?"database " + sInOutValue + " created":"ERROR: database not created");   }
-            else if(bDelete){   Serial.print(sInOutValue == ""?"database " + sInOutValue + " deleted":"ERROR: database not deleted");   }
+                 if(bGet){      Serial.print(sInOutValue == sDB?"database " + sInOutValue + " found":"ERROR: database not found"); }
+            else if(bCreate){   Serial.print(sInOutValue == ""?"database " + sDB + " created":"ERROR: database not created"); }
+            else if(bDelete){   Serial.print(sInOutValue == ""?"database " + sInOutValue + " deleted":"ERROR: database not deleted"); }
         }
         else if(bTable)
         {
-            if(bGet){
-                Serial.print(sInOutValue == ""?"table " + sInOutValue + " found":"ERROR: table not found"); }
-            else if(bCreate){
-                Serial.print(sInOutValue == ""?"table " + sInOutValue + " created":"ERROR: table not created"); }
-            else if(bDelete){
-                Serial.print(sInOutValue == ""?"table " + sInOutValue + " deleted":"ERROR: table not deleted"); }
+                 if(bGet){      Serial.print(sInOutValue == sTable?"table " + sInOutValue + " found":"ERROR: table not found"); }
+            else if(bCreate){   Serial.print(sInOutValue == ""?"table " + sTable + " created":"ERROR: table not created"); }
+            else if(bDelete){   Serial.print(sInOutValue == ""?"table " + sInOutValue + " deleted":"ERROR: table not deleted"); }
         }
         else if(bColumn)
         { 
-            if(bGet){
-                Serial.print(sInOutValue == ""?"column " + sInOutValue + " found":"ERROR: column not found"); }
-            else if(bCreate){
-                if(sInOutValue == ""){ Serial.print("column created"); }
-                else { Serial.print("column " + sInOutValue + " create ERROR  -> " + sColumn); } } 
-            else if(bDelete){
-                if(sInOutValue == ""){ Serial.print("column deleted"); }
-                else { Serial.print("column " + sInOutValue + " deleted ERROR  -> " + sInOutValue); } }
+            if(bGet){           Serial.print(sInOutValue == sColumn?"column " + sInOutValue + " found":"ERROR: column not found"); }
+            else if(bCreate){   Serial.print(sInOutValue == ""?"column " + sColumn + " created":"ERROR: column not created"); }
+            else if(bDelete){   Serial.print(sInOutValue == ""?"column " + sInOutValue + " deleted":"ERROR: column not deleted"); }
+
         };
         iQueryStep++;
     }
@@ -465,7 +452,7 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
                 if(*MysqlQueryDo("GET_COLUMN" , sDB, sTable, sColumn) == "")//Check if column exists.
                 {
                     MysqlQueryDo("CREATE_COLUMN", sDB, sTable, sColumn);//Not found, create column.
-                    MysqlQueryDo("INSERT_VALUE", sDB, sTable, sColumn, "TMPnull");//Create init value 
+                    MysqlQueryDo("INSERT_VALUE", sDB, sTable, sColumn, "TEMPInitValue");//Create init value 
                 }
             };//Column must be ok here.          
         }     
@@ -502,29 +489,34 @@ String * MysqlQuery(String sStatement, String sDB, String sTable = "", String sC
 //The main loop
 void loop()
 {
-    int r = rand() % 13;
+    int r = rand() % 15;
 
+    r = 2;
+
+    String hostname = "testing";
     switch(r){
 
-        case 1:  MysqlQuery("CREATE_DATABASE", "DatabaseName6"); break;
-        case 2:  MysqlQuery("CREATE_TABLE", "DatabaseName6", "table5"); break;
-        case 3:  MysqlQuery("CREATE_COLUMN", "DatabaseName6", "table5", "column5"); break;
-        case 4:  MysqlQuery("GET_DATABASE", "DatabaseName6"); break;
-        case 5:  MysqlQuery("GET_TABLE", "DatabaseName6", "table5"); break;
-        case 6:  MysqlQuery("GET_COLUMN", "DatabaseName6", "table5", "column5"); break;
-        case 7:  MysqlQuery("INSERT_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
-        case 8:  MysqlQuery("UPDATE_VALUE", "DatabaseName6", "table5", "column5", String(loopCounter)); break;
-        case 9:  MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ONE", "DatabaseName6", "table5", "column5"); break;
-        case 10: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ONE", "DatabaseName6", "table5", "column5"); break;
-        case 11: MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ROW", "DatabaseName6", "table5", "column5"); break;
-        case 12: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ROW", "DatabaseName6", "table5", "column5"); break;
-        case 13: MysqlQuery("DELETE_COLUMN", "DatabaseName6", "table5", "sColumn5"); break;
-        case 14: MysqlQuery("DELETE_TABLE", "DatabaseName6", "table5"); ; break;
-        case 15: MysqlQuery("DELETE_DATABASE", "DatabaseName6"); break;
+        //case 1:  MysqlQuery("CREATE_DATABASE", "iot"); break;
+        //case 2:  MysqlQuery("CREATE_TABLE", "iot", "table5"); break;
+        //case 2:  MysqlQuery("CREATE_COLUMN", "iot", "table5", "column5"); break;
+        //case 4:  MysqlQuery("GET_DATABASE", "iot"); break;
+        //case 5:  MysqlQuery("GET_TABLE", "iot", "table5"); break;
+        //case 6:  MysqlQuery("GET_COLUMN", "iot", "table5", "column5"); break;
+        case 2:  MysqlQuery("INSERT_VALUE", "iot", "table5", "column5", String(loopCounter)); break;
+        //case 8:  MysqlQuery("UPDATE_VALUE", "iot", "table5", "column5", String(loopCounter)); break;
+        //case 9:  MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ONE", "iot", "table5", "column5"); break;
+        //case 10: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ONE", "iot", "table5", "column5"); break;
+        //case 11: MysqlQuery("GET_COLUMN_VALUE_FIRST_SHOW_ROW", "iot", "table5", "column5"); break;
+        //case 12: MysqlQuery("GET_COLUMN_VALUE_LAST_SHOW_ROW", "iot", "table5", "column5"); break;
+        //case 13: MysqlQuery("DELETE_COLUMN", "iot", "table5", "column5"); break;
+        //case 2: MysqlQuery("DELETE_TABLE", "iot", "table5"); ; break;
+        //case 15: MysqlQuery("DELETE_DATABASE", "iot"); break;
     }           
 
+    //MysqlQuery("INSERT_VALUE", "iot", *getItemSvalue("hostname"), "column5", String(longCounterLoopCurrent));
+    //MysqlQuery("UPDATE_VALUE", "iot", *getItemSvalue("hostname"), "column5", String(longCounterLoopCurrent));
     Serial.print("\n.............................................................. loop:" + String(loopCounter++) + " ..............................................................");   
-    //delay(1000); //Slow down between loops
+    delay(3000); //Slow down between loops
     iQueryStep = 1;//Reset
 };
 
